@@ -9,6 +9,8 @@ const clientId =
 console.log(clientId);
 
 function App() {
+  let [username, setUsername] = useState("");
+  let tokenId;
   let [showLogin, setShowLogin] = useState(true);
   let [showSubscribe, setShowSubscribe] = useState(false);
   let [url, setUrl] = useState("");
@@ -16,9 +18,13 @@ function App() {
   let [keywords, setKeywords] = useState([]);
   let [showKeywords, setShowKeywords] = useState(false);
   let tempKeyword;
+  let [showComments, setShowComments] = useState(false);
+
   const onSuccess = (res) => {
     console.log(res.tokenId);
     console.log(res.profileObj.name);
+    setUsername(res.profileObj.name);
+    tokenId = res.tokenId;
     setShowLogin(false);
     setShowSubscribe(true);
   };
@@ -41,15 +47,36 @@ function App() {
     console.log(url);
     videoId = url.split("v=")[1].substring(0, 11);
     console.log(videoId);
+    setShowSubscribe(false);
+    setShowComments(true);
   };
 
   let handleAddKeywords = () => {
-    console.log("keyword :", keywords);
+    console.log("keyword :", keywords.length);
     console.log("tempkeyword :", tempKeyword);
-    setKeywords((keywords) => keywords.concat(tempKeyword));
-    setShowKeywords(true);
+    if (tempKeyword && keywords.length <= 9) {
+      setKeywords((keywords) => keywords.concat(tempKeyword));
+      setShowKeywords(true);
+    }
+    if (keywords.length >= 10) {
+      alert(
+        tempKeyword +
+          " not added, you have already entered max 10 inputs for comment keywords"
+      );
+    }
     document.getElementById("keywordinput").value = "";
   };
+
+  let handleUnubscribe = () => {
+    // handle the unsubscribe
+    console.log("unsubscribe");
+    setKeywords([]);
+    setUrl("");
+    setShowSubscribe(true);
+    setShowComments(false);
+    setShowKeywords(false);
+  };
+
   return (
     <React.Fragment>
       {showLogin && (
@@ -61,6 +88,7 @@ function App() {
       )}
       {showSubscribe && (
         <div>
+          <div>Welcome {username}</div>
           <label>
             URL:
             <input
@@ -95,6 +123,17 @@ function App() {
 
           <button onClick={handleSubscribe} className="button">
             <span className="buttonText">subscribe</span>
+          </button>
+        </div>
+      )}
+
+      {showComments && (
+        <div>
+          <div>URL : {url}</div>
+          <div>Keywords : {keywords.toString()}</div>
+          <div>comments will apprear here</div>
+          <button onClick={handleUnubscribe} className="button">
+            <span className="buttonText">Unsubscribe</span>
           </button>
         </div>
       )}
