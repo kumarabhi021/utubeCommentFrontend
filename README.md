@@ -1,5 +1,15 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## how to Run
+1. clone the repository to your local system.
+2. In the Project Directory, Run the command : 
+   npm install
+6. To run the Frontend, run the below command in the project directory : 
+   npm run start
+8. <br />
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+
+
 ## Available Scripts
 
 In the project directory, you can run:
