@@ -11,7 +11,6 @@ const ENDPOINT = "http://localhost:8080/";
 console.log(clientId);
 
 let socket = io(ENDPOINT);
-let i = 0;
 
 console.log(socket);
 
@@ -27,10 +26,10 @@ function App() {
   let tempKeyword;
   let [showComments, setShowComments] = useState(false);
   let [comments, setComments] = useState([]);
+  let [displayText, setDisplayText] = useState("comments will apprear here");
 
   const onSuccess = (res) => {
-    console.log(res.tokenId);
-    console.log(res.profileObj.name);
+    console.log("use logged in : ", res.profileObj.name);
     setUsername(res.profileObj.name);
     tokenId = res.tokenId;
     setShowLogin(false);
@@ -53,12 +52,15 @@ function App() {
 
   let handleSubscribe = () => {
     // handel the subscribe.
-    console.log(url);
+    console.log("url entered : ", url);
     videoId = url.split("v=")[1].substring(0, 11);
-    console.log(videoId);
+    console.log("video id extracted : ", videoId);
     setShowSubscribe(false);
     setShowComments(true);
     socket.emit("subscribe", { videoId, keywords });
+    if (keywords.length == 0) {
+      setDisplayText("showing all the comments ( since no keyword entered) : ");
+    }
   };
 
   function arrayUnique(array) {
@@ -68,19 +70,15 @@ function App() {
         if (a[i] === a[j]) a.splice(j--, 1);
       }
     }
-
     return a;
   }
 
   useEffect(() => {
     socket.on("commentsReady", (data) => {
-      console.log("data for comments : ", data.data);
+      console.log("comment received : ", data.data);
       var tempcomment = arrayUnique(comments.concat([data.data]));
       comments = tempcomment;
       setComments(comments);
-      console.log("comments array : ", comments);
-      i++;
-      console.log("i : ", i++);
     });
   }, [showComments]);
 
@@ -102,7 +100,7 @@ function App() {
 
   let handleUnubscribe = () => {
     // handle the unsubscribe
-    console.log("unsubscribe");
+    console.log("unsubscribed");
     setKeywords([]);
     setUrl("");
     setShowSubscribe(true);
@@ -145,7 +143,6 @@ function App() {
               value={tempKeyword}
               onChange={(e) => {
                 tempKeyword = e.target.value;
-                console.log(tempKeyword);
               }}
               placeholder="enter the keywords here"
             />
@@ -166,7 +163,7 @@ function App() {
           <div>URL : {url}</div>
           <div>Keywords : {keywords.toString()}</div>
           <div>
-            comments will apprear here{" "}
+            {displayText}{" "}
             {comments.map((comment) => (
               <li>{comment}</li>
             ))}
