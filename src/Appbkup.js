@@ -1,19 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import { useGoogleLogin } from "react-google-login";
-import io from "socket.io-client";
 
 const clientId =
   "400905271083-3vand57i3q59oks52jcunoa40ure8pm3.apps.googleusercontent.com";
-const ENDPOINT = "http://localhost:8080/";
 
 console.log(clientId);
-
-let socket = io(ENDPOINT);
-let i = 0;
-
-console.log(socket);
 
 function App() {
   let [username, setUsername] = useState("");
@@ -26,7 +19,6 @@ function App() {
   let [showKeywords, setShowKeywords] = useState(false);
   let tempKeyword;
   let [showComments, setShowComments] = useState(false);
-  let [comments, setComments] = useState([]);
 
   const onSuccess = (res) => {
     console.log(res.tokenId);
@@ -35,7 +27,6 @@ function App() {
     tokenId = res.tokenId;
     setShowLogin(false);
     setShowSubscribe(true);
-    socket.emit("login", { token: res.tokenId });
   };
 
   const onFailure = (res) => {
@@ -58,31 +49,7 @@ function App() {
     console.log(videoId);
     setShowSubscribe(false);
     setShowComments(true);
-    socket.emit("subscribe", { videoId, keywords });
   };
-
-  function arrayUnique(array) {
-    var a = array.concat();
-    for (var i = 0; i < a.length; ++i) {
-      for (var j = i + 1; j < a.length; ++j) {
-        if (a[i] === a[j]) a.splice(j--, 1);
-      }
-    }
-
-    return a;
-  }
-
-  useEffect(() => {
-    socket.on("commentsReady", (data) => {
-      console.log("data for comments : ", data.data);
-      var tempcomment = arrayUnique(comments.concat([data.data]));
-      comments = tempcomment;
-      setComments(comments);
-      console.log("comments array : ", comments);
-      i++;
-      console.log("i : ", i++);
-    });
-  }, [showComments]);
 
   let handleAddKeywords = () => {
     console.log("keyword :", keywords.length);
@@ -108,7 +75,6 @@ function App() {
     setShowSubscribe(true);
     setShowComments(false);
     setShowKeywords(false);
-    setComments([]);
   };
 
   return (
@@ -165,12 +131,7 @@ function App() {
         <div>
           <div>URL : {url}</div>
           <div>Keywords : {keywords.toString()}</div>
-          <div>
-            comments will apprear here{" "}
-            {comments.map((comment) => (
-              <li>{comment}</li>
-            ))}
-          </div>
+          <div>comments will apprear here</div>
           <button onClick={handleUnubscribe} className="button">
             <span className="buttonText">Unsubscribe</span>
           </button>
