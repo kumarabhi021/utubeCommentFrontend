@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from "react";
 import logo from "./logo.svg";
 import "./App.css";
-import { useGoogleLogin } from "react-google-login";
+import { useGoogleLogin, useGoogleLogout } from "react-google-login";
 import io from "socket.io-client";
 
 const clientId =
   "400905271083-3vand57i3q59oks52jcunoa40ure8pm3.apps.googleusercontent.com";
 const ENDPOINT = "http://localhost:8080/";
 
-console.log(clientId);
-
 let socket = io(ENDPOINT);
-
-console.log(socket);
+let keycount = 0;
 
 function App() {
   let [username, setUsername] = useState("");
@@ -29,7 +26,7 @@ function App() {
   let [displayText, setDisplayText] = useState("comments will apprear here");
 
   const onSuccess = (res) => {
-    console.log("use logged in : ", res.profileObj.name);
+    console.log("user logged in : ", res.profileObj.name);
     setUsername(res.profileObj.name);
     tokenId = res.tokenId;
     setShowLogin(false);
@@ -41,6 +38,25 @@ function App() {
     console.log("login failed ", res);
   };
 
+  const onLogoutSuccess = (res) => {
+    socket.emit("stopPolling", { data: "stopPolling" });
+    setShowLogin(true);
+    setShowComments(false);
+    setKeywords([]);
+    setUrl();
+    setShowSubscribe(false);
+    setComments([]);
+    console.log("user logged out");
+    setUsername("");
+    tokenId = "";
+    videoId = "";
+    setDisplayText("comments will appear here");
+  };
+
+  const onLogoutFailure = (res) => {
+    console.log("logout failed");
+  };
+
   const { signIn } = useGoogleLogin({
     onSuccess,
     onFailure,
@@ -48,6 +64,13 @@ function App() {
     isSignedIn: true,
     accessType: "offline",
     scope: "https://www.googleapis.com/auth/youtube.readonly",
+  });
+
+  const { signOut, loaded } = useGoogleLogout({
+    onFailure: onLogoutFailure,
+    clientId: clientId,
+    onLogoutSuccess,
+    isSignedIn: true,
   });
 
   let handleSubscribe = () => {
@@ -63,26 +86,17 @@ function App() {
     }
   };
 
-  function arrayUnique(array) {
-    var a = array.concat();
-    for (var i = 0; i < a.length; ++i) {
-      for (var j = i + 1; j < a.length; ++j) {
-        if (a[i] === a[j]) a.splice(j--, 1);
-      }
-    }
-    return a;
-  }
-
   useEffect(() => {
     socket.on("commentsReady", (data) => {
       console.log("comment received : ", data.data);
-      var tempcomment = arrayUnique(comments.concat([data.data]));
+      var tempcomment = comments.concat([data.data]);
       comments = tempcomment;
       setComments(comments);
     });
   }, [showComments]);
 
   let handleAddKeywords = () => {
+    setDisplayText("");
     console.log("keyword :", keywords.length);
     console.log("tempkeyword :", tempKeyword);
     if (tempKeyword && keywords.length <= 9) {
@@ -100,6 +114,8 @@ function App() {
 
   let handleUnubscribe = () => {
     // handle the unsubscribe
+    socket.emit("stopPolling", { data: "stopPolling" });
+    comments = "";
     console.log("unsubscribed");
     setKeywords([]);
     setUrl("");
@@ -118,9 +134,16 @@ function App() {
           </button>
         </div>
       )}
-      {showSubscribe && (
+      {!showLogin && (
         <div>
           <div>Welcome {username}</div>
+          <button onClick={signOut} className="button">
+            <span className="buttonText">Sign out</span>
+          </button>
+        </div>
+      )}
+      {showSubscribe && (
+        <div>
           <label>
             URL:
             <input
@@ -160,12 +183,21 @@ function App() {
 
       {showComments && (
         <div>
-          <div>URL : {url}</div>
-          <div>Keywords : {keywords.toString()}</div>
           <div>
-            {displayText}{" "}
+            {" "}
+            <b>URL : </b>
+            {url}
+          </div>
+          <div>
+            <b>Keywords : </b>
+            {keywords.toString() || "**NA**"}
+          </div>
+          <div>
+            <strong>Comments </strong>
+            <i>{displayText}</i> <br />
+            <br />
             {comments.map((comment) => (
-              <li>{comment}</li>
+              <li key={keycount++}>{comment}</li>
             ))}
           </div>
           <button onClick={handleUnubscribe} className="button">
