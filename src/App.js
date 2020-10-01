@@ -3,6 +3,8 @@ import logo from "./logo.svg";
 import "./App.css";
 import { useGoogleLogin, useGoogleLogout } from "react-google-login";
 import io from "socket.io-client";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Button, Container, Row, Col, Spinner } from "react-bootstrap";
 
 const clientId =
   "400905271083-3vand57i3q59oks52jcunoa40ure8pm3.apps.googleusercontent.com";
@@ -24,6 +26,7 @@ function App() {
   let [showComments, setShowComments] = useState(false);
   let [comments, setComments] = useState([]);
   let [displayText, setDisplayText] = useState("comments will apprear here");
+  let [showLoadingComments, setShowLoadingComments] = useState(false);
 
   const onSuccess = (res) => {
     console.log("user logged in : ", res.profileObj.name);
@@ -66,7 +69,7 @@ function App() {
     scope: "https://www.googleapis.com/auth/youtube.readonly",
   });
 
-  const { signOut, loaded } = useGoogleLogout({
+  const { signOut } = useGoogleLogout({
     onFailure: onLogoutFailure,
     clientId: clientId,
     onLogoutSuccess,
@@ -75,6 +78,9 @@ function App() {
 
   let handleSubscribe = () => {
     // handel the subscribe.
+
+    setShowLoadingComments(true);
+    showLoadingComments = true;
     console.log("url entered : ", url);
     videoId = url.split("v=")[1].substring(0, 11);
     console.log("video id extracted : ", videoId);
@@ -88,10 +94,13 @@ function App() {
 
   useEffect(() => {
     socket.on("commentsReady", (data) => {
+      setShowLoadingComments(false);
       console.log("comment received : ", data.data);
       var tempcomment = comments.concat([data.data]);
       comments = tempcomment;
       setComments(comments);
+      showLoadingComments = false;
+      setShowLoadingComments(false);
     });
   }, [showComments]);
 
@@ -127,84 +136,109 @@ function App() {
 
   return (
     <React.Fragment>
-      {showLogin && (
-        <div>
-          <button onClick={signIn} className="button">
-            <span className="buttonText">Sign in with Google</span>
-          </button>
-        </div>
-      )}
-      {!showLogin && (
-        <div>
-          <div>Welcome {username}</div>
-          <button onClick={signOut} className="button">
-            <span className="buttonText">Sign out</span>
-          </button>
-        </div>
-      )}
-      {showSubscribe && (
-        <div>
-          <label>
-            URL:
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => {
-                setUrl(e.target.value);
-              }}
-              placeholder="enter the youtube livestream URL here"
-            />
-          </label>
-          {showKeywords && (
-            <div>comment Keywords entered :{keywords.toString()}</div>
-          )}
-          <br></br>
-          <label>
-            <input
-              id="keywordinput"
-              type="text"
-              value={tempKeyword}
-              onChange={(e) => {
-                tempKeyword = e.target.value;
-              }}
-              placeholder="enter the keywords here"
-            />
-          </label>
-          <button onClick={handleAddKeywords} className="button">
-            <span className="buttonText">Add keywords</span>
-          </button>
-          <br></br>
+      <div className="App-header">
+        {showLogin && (
+          <div>
+            <Button variant="primary" onClick={signIn} className="button">
+              Sign in with Google
+            </Button>
+          </div>
+        )}
+        {!showLogin && (
+          <div>
+            <Container fluid>
+              <Row>
+                <Col>
+                  <b />
+                  <div>Welcome {username}</div>
+                </Col>
+                <Col xs={6}> </Col>
+                <Col>
+                  {" "}
+                  <b />{" "}
+                  <Button
+                    variant="outline-info"
+                    onClick={signOut}
+                    className="button"
+                  >
+                    Sign out
+                  </Button>
+                </Col>
+              </Row>
+            </Container>
+          </div>
+        )}
+        {showSubscribe && (
+          <div>
+            <label>
+              URL:
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                }}
+                placeholder="enter the youtube livestream URL here"
+              />
+            </label>
+            {showKeywords && <div> Keywords : {keywords.toString()}</div>}
+            <br></br>
+            <label>
+              <input
+                id="keywordinput"
+                type="text"
+                value={tempKeyword}
+                onChange={(e) => {
+                  tempKeyword = e.target.value;
+                }}
+                placeholder="enter the keywords here"
+              />
+            </label>
+            <Button onClick={handleAddKeywords} className="button">
+              <span className="buttonText">Add keywords</span>
+            </Button>
+            <br></br>
 
-          <button onClick={handleSubscribe} className="button">
-            <span className="buttonText">subscribe</span>
-          </button>
-        </div>
-      )}
+            <Button variant="primary" onClick={handleSubscribe}>
+              subscribe
+            </Button>
+          </div>
+        )}
 
-      {showComments && (
-        <div>
+        {showComments && (
           <div>
-            {" "}
-            <b>URL : </b>
-            {url}
+            <div>
+              {" "}
+              <b>URL : </b>
+              {url}
+            </div>
+            <div>
+              <b>Keywords : </b>
+              {keywords.toString() || "**NA**"}
+            </div>
+            <div>
+              <strong>Comments : </strong>
+              <i>{displayText}</i> <br />
+              <br />
+              {showLoadingComments && (
+                <Spinner animation="border" role="status">
+                  <span className="sr-only">Loading...</span>
+                </Spinner>
+              )}
+              {comments.map((comment) => (
+                <li key={keycount++}>{comment}</li>
+              ))}
+            </div>
+            <Button
+              variant="primary"
+              onClick={handleUnubscribe}
+              className="button"
+            >
+              Unsubscribe
+            </Button>
           </div>
-          <div>
-            <b>Keywords : </b>
-            {keywords.toString() || "**NA**"}
-          </div>
-          <div>
-            <strong>Comments </strong>
-            <i>{displayText}</i> <br />
-            <br />
-            {comments.map((comment) => (
-              <li key={keycount++}>{comment}</li>
-            ))}
-          </div>
-          <button onClick={handleUnubscribe} className="button">
-            <span className="buttonText">Unsubscribe</span>
-          </button>
-        </div>
-      )}
+        )}
+      </div>
     </React.Fragment>
   );
 }
